@@ -2,10 +2,12 @@ package com.bignerdranch.android.draganddraw;
 
 import java.util.ArrayList;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.PointF;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.AttributeSet;
@@ -22,6 +24,7 @@ public class BoxDrawingView extends View {
 	private ArrayList<Box> mBoxes = new ArrayList<Box>();
 	private Paint mBoxPaint;
 	private Paint mBackgroundPaint;
+	private float rotate;
 
 	@Override
 	protected Parcelable onSaveInstanceState() {
@@ -30,7 +33,7 @@ public class BoxDrawingView extends View {
 		bundle.putSerializable(EXTRA_BOX_DRAWING_ID, mBoxes);
 		return bundle;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	@Override
 	protected void onRestoreInstanceState(Parcelable state) {
@@ -40,7 +43,6 @@ public class BoxDrawingView extends View {
 			state = bundle.getParcelable("instanceState");
 		}
 		super.onRestoreInstanceState(state);
-		
 	}
 	
 	// Used when creating the view
@@ -62,11 +64,13 @@ public class BoxDrawingView extends View {
 		mBackgroundPaint.setColor( 0xfff8efe0 );
 	}
 	
+	@TargetApi(Build.VERSION_CODES.GINGERBREAD)
 	public boolean onTouchEvent( MotionEvent event ) {
-		PointF curr = new PointF( event.getX(), event.getY() );
 		
+		PointF curr = new PointF( event.getX(), event.getY() );
 		Log.i( TAG, "Recived event at x=" + curr.x + " y=" + curr.y + ":" );
-		switch ( event.getAction() ) {
+		
+		switch ( event.getActionMasked() ) {
 		case MotionEvent.ACTION_DOWN:
 			Log.i(TAG, "  ACTION_DOWN" );
 			// Reset drawing state
@@ -88,6 +92,15 @@ public class BoxDrawingView extends View {
 			Log.i(TAG, "  ACTION_CANCEL" );
 			mCurrentBox = null;
 			break;
+
+		case MotionEvent.ACTION_POINTER_DOWN:
+			int index = event.getActionIndex();
+			rotate = event.getTouchMajor( index );
+			break;
+		case MotionEvent.ACTION_POINTER_UP:
+			Log.i(TAG, "  ACTION_POINTER_UP" );
+			rotate = 0;
+			break;
 		}
 		return true;
 	}
@@ -102,8 +115,13 @@ public class BoxDrawingView extends View {
 			float right = Math.max( box.getOrigin().x,  box.getCurrent().x );
 			float top = Math.min( box.getOrigin().y,  box.getCurrent().y );
 			float bottom = Math.max( box.getOrigin().y,  box.getCurrent().y );
-			
+		
 			canvas.drawRect( left, top, right, bottom, mBoxPaint );
+			
+			if ( 0 != rotate ) {
+				canvas.rotate(rotate, Math.abs(left - right), Math.abs(top - bottom) );
+
+			}
 		}
 	}
 }
