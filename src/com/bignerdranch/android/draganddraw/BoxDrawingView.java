@@ -25,6 +25,7 @@ public class BoxDrawingView extends View {
 	private Paint mBoxPaint;
 	private Paint mBackgroundPaint;
 	private float rotate;
+	private int currentIndex;
 
 	@Override
 	protected Parcelable onSaveInstanceState() {
@@ -80,6 +81,10 @@ public class BoxDrawingView extends View {
 		case MotionEvent.ACTION_MOVE:
 			Log.i(TAG, "  ACTION_MOVE" );
 			if ( mCurrentBox != null ) {
+				if ( currentIndex != 0 && currentIndex == event.getActionIndex() ) {
+					rotate = event.getHistoricalY( currentIndex, 1 );
+					curr.set( event.getX() + rotate, event.getY() + rotate );
+				}
 				mCurrentBox.setCurrent(curr);
 				invalidate();
 			}
@@ -94,12 +99,12 @@ public class BoxDrawingView extends View {
 			break;
 
 		case MotionEvent.ACTION_POINTER_DOWN:
-			int index = event.getActionIndex();
-			rotate = event.getTouchMajor( index );
+			currentIndex = event.getActionIndex();
 			break;
 		case MotionEvent.ACTION_POINTER_UP:
 			Log.i(TAG, "  ACTION_POINTER_UP" );
 			rotate = 0;
+			currentIndex = 0;
 			break;
 		}
 		return true;
@@ -115,13 +120,14 @@ public class BoxDrawingView extends View {
 			float right = Math.max( box.getOrigin().x,  box.getCurrent().x );
 			float top = Math.min( box.getOrigin().y,  box.getCurrent().y );
 			float bottom = Math.max( box.getOrigin().y,  box.getCurrent().y );
-		
+			
+			if ( rotate == 0 ) {
+				canvas.rotate( rotate, left, bottom );
+			}
+			
 			canvas.drawRect( left, top, right, bottom, mBoxPaint );
 			
-			if ( 0 != rotate ) {
-				canvas.rotate(rotate, Math.abs(left - right), Math.abs(top - bottom) );
 
-			}
 		}
 	}
 }
